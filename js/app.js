@@ -6,7 +6,8 @@
 (function () {
   'use strict';
 
-  const API_BASE = 'api';
+  const API_BASE = 'http://localhost:3000/api';
+  const UPLOAD_API = 'http://localhost:3000'; // Node 上傳 API（可改為空字串使用模擬轉譯）
   const STORAGE_USER = 'ai_meeting_user';
   const STORAGE_HISTORY = 'ai_meeting_history';
 
@@ -57,10 +58,11 @@
   function showApp() {
     const nameEl = elements.userName();
     const logoutBtn = elements.logoutBtn();
-    if (nameEl) nameEl.textContent = currentUser ? (currentUser.name || currentUser.email || '會員') : '訪客';
+    if (nameEl) nameEl.textContent = currentUser ? (currentUser.name || currentUser.email || '會員') : '';
     if (logoutBtn) {
-      logoutBtn.title = currentUser ? '登出' : '登入';
-      logoutBtn.setAttribute('aria-label', currentUser ? '登出' : '登入');
+      logoutBtn.title = '登出';
+      logoutBtn.setAttribute('aria-label', '登出');
+      logoutBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
     }
     loadHistory();
   }
@@ -69,7 +71,7 @@
     if (currentUser) {
       saveUser(null);
       try {
-        await fetch(`${API_BASE}/auth.php?action=logout`, { method: 'POST' });
+        await fetch(`${API_BASE}/logout`, { method: 'POST' });
       } catch (e) {}
     }
     window.location.href = 'login.html';
@@ -79,7 +81,9 @@
   async function loadHistory() {
     if (currentUser && currentUser.fromApi) {
       try {
-        const res = await fetch(`${API_BASE}/meetings.php`);
+        const res = await fetch(`${API_BASE}/meetings`, {
+          headers: { 'X-User-Id': currentUser.id },
+        });
         const data = await res.json().catch(() => ({}));
         if (data.success && Array.isArray(data.list)) {
           renderHistoryList(data.list);
@@ -141,17 +145,19 @@
     const user = currentUser || { id: 1 };
     if (user.fromApi) {
       try {
-        const res = await fetch(`${API_BASE}/meetings.php`, {
+        const res = await fetch(`${API_BASE}/meetings`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-User-Id': user.id },
           body: JSON.stringify({
             title: record.title || '會議紀錄',
             transcript: record.transcript,
             summary: record.summary,
           }),
         });
-        if (res.ok) await loadHistory();
-        return;
+        if (res.ok) {
+          await loadHistory();
+          return;
+        }
       } catch (e) {}
     }
     const id = 'm' + Date.now();
@@ -232,6 +238,36 @@
     }, 200);
   }
 
+  async function processFileWithNodeAPI(file) {
+    if (!UPLOAD_API || !currentUser?.id) return false;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user_id', String(currentUser.id));
+    formData.append('title', file.name.replace(/\.[^.]+$/, '') || '會議紀錄');
+    try {
+      const res = await fetch(`${UPLOAD_API}/api/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.success && data.meeting) {
+        const m = data.meeting;
+        const s = m.summary || {};
+        showProgress(false);
+        showTranscript(m.transcript);
+        elements.summaryPlaceholder()?.classList.add('hidden');
+        const result = elements.summaryResult();
+        if (result) {
+          result.classList.remove('hidden');
+          renderSummaryLists(s.topics || [], s.todos || [], s.decisions || s.keyDecisions || []);
+        }
+        loadHistory();
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
   function processFile(file) {
     if (!file || !file.type.startsWith('audio/')) {
       alert('請選擇音訊檔案（如 mp3、wav、m4a）');
@@ -240,23 +276,43 @@
     showProgress(true);
     setProgress(0);
 
+    const done = (transcript, summary) => {
+      showProgress(false);
+      showTranscript(transcript);
+      elements.summaryPlaceholder()?.classList.add('hidden');
+      const result = elements.summaryResult();
+      if (result) {
+        result.classList.remove('hidden');
+        renderSummaryLists(summary.topics || [], summary.todos || [], summary.decisions || []);
+      }
+      addToHistory({
+        title: file.name.replace(/\.[^.]+$/, '') || '會議紀錄',
+        transcript,
+        summary,
+      });
+    };
+
+    if (UPLOAD_API && currentUser?.fromApi) {
+      processFileWithNodeAPI(file).then((ok) => {
+        if (!ok) {
+          setProgress(0);
+          simulateTranscription(file, (p) => setProgress(p), (transcript) => {
+            const summary = generateSummaryFromTranscript(transcript);
+            done(transcript, summary);
+          });
+        } else {
+          setProgress(100);
+        }
+      });
+      return;
+    }
+
     simulateTranscription(
       file,
       (p) => setProgress(p),
       (transcript) => {
-        showTranscript(transcript);
         const summary = generateSummaryFromTranscript(transcript);
-        elements.summaryPlaceholder()?.classList.add('hidden');
-        const result = elements.summaryResult();
-        if (result) {
-          result.classList.remove('hidden');
-          renderSummaryLists(summary.topics, summary.todos, summary.decisions);
-        }
-        addToHistory({
-          title: file.name.replace(/\.[^.]+$/, '') || '會議紀錄',
-          transcript,
-          summary,
-        });
+        done(transcript, summary);
       }
     );
   }
@@ -301,10 +357,14 @@
   }
 
   function init() {
+    loadUser();
+    if (!currentUser) {
+      window.location.href = 'login.html';
+      return;
+    }
     bindAuth();
     bindUpload();
-    loadUser();
-    showApp(); // 進入系統時直接顯示首頁
+    showApp();
   }
 
   if (document.readyState === 'loading') {

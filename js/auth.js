@@ -43,7 +43,7 @@
   async function doLogin(email, password) {
     showAuthMessage('');
     try {
-      const res = await fetch(`${API_BASE}/auth.php?action=login`, {
+      const res = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -64,12 +64,19 @@
   async function doRegister(name, email, password) {
     showAuthMessage('');
     try {
-      const res = await fetch(`${API_BASE}/auth.php?action=register`, {
+      const res = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-      const data = await res.json().catch(() => ({}));
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch (_) {
+        showAuthMessage('無法解析回應：' + (text.slice(0, 80) || res.status));
+        return;
+      }
       if (data.success && data.user) {
         data.user.fromApi = true;
         saveUser(data.user);
@@ -101,6 +108,16 @@
   }
 
   function init() {
+    const raw = localStorage.getItem(STORAGE_USER);
+    if (raw) {
+      try {
+        const user = JSON.parse(raw);
+        if (user && (user.id || user.email)) {
+          redirectToApp();
+          return;
+        }
+      } catch (e) {}
+    }
     bindAuth();
   }
 

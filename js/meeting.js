@@ -3,6 +3,18 @@
  * 深藍色系 #0F172A, #1E293B + Tailwind CSS
  */
 
+const STORAGE_USER = 'ai_meeting_user';
+
+function checkAuth() {
+  try {
+    const raw = localStorage.getItem(STORAGE_USER);
+    if (!raw) return false;
+    const user = JSON.parse(raw);
+    return user && (user.id || user.email);
+  } catch (e) {}
+  return false;
+}
+
 const mockMeetingData = {
   id: 'mtg-001',
   title: 'Q1 產品規劃會議',
@@ -114,6 +126,10 @@ function renderSidePanel(data) {
 }
 
 function init() {
+  if (!checkAuth()) {
+    window.location.href = 'login.html';
+    return;
+  }
   renderSummaryHeader(mockMeetingData);
   renderTranscript(mockMeetingData);
   renderSidePanel(mockMeetingData);

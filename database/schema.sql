@@ -2,8 +2,8 @@
 -- 執行方式: mysql -u root -p < database/schema.sql
 -- 或於 phpMyAdmin 匯入此檔
 
-CREATE DATABASE IF NOT EXISTS ai_recording CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE ai_recording;
+CREATE DATABASE IF NOT EXISTS ai_meetings CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE ai_meetings;
 
 -- 會員
 CREATE TABLE IF NOT EXISTS users (

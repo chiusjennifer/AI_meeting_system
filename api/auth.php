@@ -2,11 +2,11 @@
 /**
  * 會員登入 / 註冊 API
  */
+require_once __DIR__ . '/config.php';
+
 header('Content-Type: application/json; charset=utf-8');
 session_name(SESSION_NAME);
 session_start();
-
-require_once __DIR__ . '/config.php';
 
 $action = $_GET['action'] ?? '';
 
@@ -82,7 +82,7 @@ if ($action === 'register') {
       'user' => ['id' => $id, 'name' => $name, 'email' => $email],
     ]);
   } catch (PDOException $e) {
-    jsonResponse(['success' => false, 'message' => '註冊失敗，請稍後再試']);
+    jsonResponse(['success' => false, 'message' => '註冊失敗：' . $e->getMessage()]);
   }
   exit;
 }
