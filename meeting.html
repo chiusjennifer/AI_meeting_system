@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>會議紀錄 - AI 會議記錄系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- #0F172A = slate-900, #1E293B = slate-800 -->
+</head>
+<body class="bg-[#0F172A] text-white min-h-screen font-sans antialiased">
+  <div id="meetingApp" class="flex flex-col min-h-screen">
+    <nav class="bg-[#1E293B] border-b border-slate-700/50 px-6 py-2 shrink-0">
+      <a href="index.html" class="text-slate-400 hover:text-white text-sm">← 回首頁</a>
+    </nav>
+    <!-- 1. 頂部摘要區 -->
+    <header id="summaryHeader" class="bg-[#1E293B] border-b border-slate-700/50 px-6 py-4 shrink-0"></header>
+
+    <!-- 主內容：中央逐字稿 + 右側面板 -->
+    <div class="flex flex-1 min-h-0">
+      <!-- 2. 中央滾動逐字稿區 -->
+      <main id="transcriptArea" class="flex-1 overflow-y-auto px-6 py-4"></main>
+
+      <!-- 3. 右側待辦事項與決策面板 -->
+      <aside id="sidePanel" class="w-80 shrink-0 border-l border-slate-700/50 overflow-y-auto"></aside>
+    </div>
+  </div>
+
+  <script src="js/meeting.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 會議記錄系統</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 主應用（首頁） -->
+  <div id="app" class="app">
+    <header class="header">
+      <h1 class="header-title">AI Meeting Recording System</h1>
+      <div class="header-actions">
+        <span id="userName" class="user-name"></span>
+        <button type="button" id="logoutBtn" class="icon-btn" title="登出" aria-label="登出">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- 左欄：歷史紀錄 -->
+      <aside class="panel panel-history">
+        <h2 class="panel-title">History</h2>
+        <ul id="historyList" class="history-list"></ul>
+        <p id="historyEmpty" class="empty-hint">尚無會議紀錄</p>
+      </aside>
+
+      <!-- 中欄：上傳 + 轉譯 -->
+      <section class="middle-column">
+        <div class="panel panel-upload">
+          <h2 class="panel-title">Upload Audio</h2>
+          <div id="uploadZone" class="upload-zone">
+            <input type="file" id="audioInput" accept="audio/*" hidden>
+            <svg class="upload-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>Drag&Drop or Click to Upload</span>
+          </div>
+        </div>
+        <div class="panel panel-transcript">
+          <h2 class="panel-title">Transcript</h2>
+          <div id="transcriptContent" class="transcript-content">
+            <p id="transcriptPlaceholder" class="placeholder">上傳音檔後將顯示即時轉譯內容</p>
+            <div id="transcriptProgress" class="progress-wrap hidden">
+              <div class="progress-bar" id="progressBarFill"></div>
+              <span id="progressPercent" class="progress-percent">0%</span>
+            </div>
+            <div id="transcriptText" class="transcript-text hidden"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右欄：智能摘要 -->
+      <aside class="panel panel-summary">
+        <h2 class="panel-title">Summary</h2>
+        <div id="summaryContent" class="summary-content">
+          <p id="summaryPlaceholder" class="placeholder">轉譯完成後將自動生成摘要</p>
+          <div id="summaryResult" class="summary-result hidden">
+            <section class="summary-section">
+              <h3>會議主題</h3>
+              <ul id="summaryTopics"></ul>
+            </section>
+            <section class="summary-section">
+              <h3>待辦事項 (To-do)</h3>
+              <ul id="summaryTodos"></ul>
+            </section>
+            <section class="summary-section">
+              <h3>關鍵決策</h3>
+              <ul id="summaryDecisions"></ul>
+            </section>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
